@@ -95,8 +95,8 @@ def xfile(afile, globalz=None, localz=None):
     with open(afile, "r") as fh:
         exec(fh.read(), globalz, localz)
 
-xfile("./gwbutton.py", globals())
-xfile("./waves.py", globals())
+xfile("./src/gwbutton.py", globals())
+xfile("./src/waves.py", globals())
 
 def ligo_gps_time(t):
     gpst = 0

@@ -1,4 +1,5 @@
-from tkinter import *
+import tk
+from tk import *
 
 global scan
 button_txt = ""
@@ -8,7 +9,7 @@ def scanButton():
     root.geometry('300x160')
     root.title('Scan control')
 
-    dwell_scale = IntVar()
+    dwell_scale = tk.IntVar()
 
     def dwellTime(newScale):
 #        global scan
