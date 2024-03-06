@@ -60,7 +60,7 @@ class  scan_info:
         self.window = wndw
         self.dwell = dwl
         self.idle  = idl
-        self.run = 0
+        self.run = 1
     def show(self):
         print('start = ', self.start, '   stop = ', self.stop, '\n'\
               'incr   = ', self.incr, '\n'\
@@ -71,7 +71,7 @@ class  scan_info:
               'run    = ', self.run
              )
 
-scan = scan_info(0.2, 50, 10, 0.3, 1.0)
+scan = scan_info(0.2, 200, 10, 0.3, 1.0)
 
 ligo_names = ['Hanford', 'Livingston', 'Virgo']
 ligo_short_names = ['H1', 'L1', 'V1']
@@ -137,7 +137,7 @@ def fetch_data():
             ligo_used = ligo_used + 1
 
 
-def plot_data():
+def plot_data(tincr = 0.0):
     global raw_plot, lpi
     raw_plot, axes = plt.subplots(ligo_used, sharex=True, figsize=(12, 7))
     for i in range(ligo_used):
@@ -148,6 +148,7 @@ def plot_data():
         lpi[i].low, lpi[i].high = axes[i].get_ylim()
     plt.draw()
     plt.show(block=False)
+    set_time_limits()
 
 
 
@@ -196,7 +197,7 @@ def time_scan(pltFlag = True):
 #
 #        print('round: ', i, '   x start= ', x_start, ', x_stop= ', x_stop)
 #        sys.stdout.flush()
-        time.sleep(scan.dwell)
+        # time.sleep(scan.dwell)
     print ('Time scanning finished...')
     sys.stdout.flush()
 #

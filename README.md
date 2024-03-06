@@ -25,4 +25,4 @@ plot_data()
 ```
 
 # delete saved data
-to delete timeseries data that has been saved delete the file `src/data.txt`
+to delete timeseries data that has been saved delete the files in `data` directory
