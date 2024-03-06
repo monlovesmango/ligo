@@ -3,6 +3,7 @@
 import string
 import time
 import sys
+import os.path
 from threading import Thread
 import numpy as np
 import matplotlib
@@ -122,9 +123,16 @@ def fetch_data():
 
     ligo_used = 0
     gps_span = gps_end - gps_start
-    for i in range(3):
+    for i in range(len(ligo)):
         if ligo[i].flag:
-            ligo[i].data = ts.fetch_open_data(ligo[i].short_name, gps_start, gps_end)
+            datafile = "./data/" + ligo[i].name + ".txt"
+            if os.path.isfile(datafile):
+                print('loading', ligo[i].name, 'from cached data')
+                ligo[i].data = ts.read(datafile)
+            else:
+                print('fetching and saving', ligo[i].name, 'data')
+                ligo[i].data = ts.fetch_open_data(ligo[i].short_name, gps_start, gps_end)
+                ligo[i].data.write(datafile)
             plot_data_index[ligo_used] = i
             ligo_used = ligo_used + 1
 

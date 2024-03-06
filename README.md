@@ -12,9 +12,17 @@ pip install -r ./requirements.txt
 ```
 
 # load gwplot.py
-```python 
+``` 
 python -i gwplot.py```
 
 ```
 
 # start it up
+```
+fetch_data()
+set_time_limits()
+plot_data()
+```
+
+# delete saved data
+to delete timeseries data that has been saved delete the file `src/data.txt`
