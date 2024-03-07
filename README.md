@@ -19,9 +19,7 @@ python -i gwplot.py```
 
 # start it up
 ```
-fetch_data()
-set_time_limits()
-plot_data()
+start()
 ```
 
 # delete saved data

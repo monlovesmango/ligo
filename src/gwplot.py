@@ -1,14 +1,15 @@
 
 ### start python at command line: > python -i gwplot.py
-import string
+# import string
 import time
 import sys
 import os.path
+from tkinter import *
 from threading import Thread
 import numpy as np
 import matplotlib
 
-#matplotlib.use("TkAgg")
+matplotlib.use("TkAgg")
 import matplotlib.pyplot as plt
 
 import gwpy
@@ -21,6 +22,8 @@ h1 = 0
 l1 = 1
 v1 = 2
 
+button_txt = ""
+global root, root_after_id
 
 class ligo_detector:
    def __init__(self, lName, sName, iflg = False):
@@ -92,12 +95,12 @@ raw_plot = None
 # x_stop = 1.0
 
 
-def xfile(afile, globalz=None, localz=None):
-    with open(afile, "r") as fh:
-        exec(fh.read(), globalz, localz)
+# def xfile(afile, globalz=None, localz=None):
+#     with open(afile, "r") as fh:
+#         exec(fh.read(), globalz, localz)
 
-xfile("./src/gwbutton.py", globals())
-xfile("./src/waves.py", globals())
+# xfile("./src/gwbutton.py", globals())
+# xfile("./src/waves.py", globals())
 
 def ligo_gps_time(t):
     gpst = 0
@@ -127,10 +130,10 @@ def fetch_data():
         if ligo[i].flag:
             datafile = "./data/" + ligo[i].name + ".txt"
             if os.path.isfile(datafile):
-                print('loading', ligo[i].name, 'from cached data')
+                print('Loading', ligo[i].name, 'from cached data...')
                 ligo[i].data = ts.read(datafile)
             else:
-                print('fetching and saving', ligo[i].name, 'data')
+                print('Fetching and saving', ligo[i].name, 'data...')
                 ligo[i].data = ts.fetch_open_data(ligo[i].short_name, gps_start, gps_end)
                 ligo[i].data.write(datafile)
             plot_data_index[ligo_used] = i
@@ -149,11 +152,6 @@ def plot_data(tincr = 0.0):
     plt.draw()
     plt.show(block=False)
     set_time_limits()
-
-
-
-
-
 
 def set_time_limits(tincr = 0.0):
 #    global gps_start, gps_end
@@ -177,28 +175,161 @@ def set_time_limits(tincr = 0.0):
 #    raw_plot.canvas.draw()
 #    raw_plot.canvas.flush_events()
 
-def time_scan(pltFlag = True):
-    i = 0
-    while i < scan.count:
-        if scan.run == 2:
-            loop = 0
-            while loop < 20:
-                time.sleep(scan.idle)
-                loop = loop + 1
-#
-            print('Scanning on hold...')
-            sys.stdout.flush()
-        elif scan.run == 0:
-            i = scan.count      # force early exit 
+def next_frame():
+    global root, root_after_id
+    if scan.run == 1:
+        set_time_limits(scan.incr)
+        root_after_id = root.after(int(scan.dwell * 1000), next_frame)
+
+def start():
+    global root, root_after_id
+    root = Tk()  # create parent window
+    root.geometry('300x160')
+    root.title('Scan control')
+
+    dwell_scale = IntVar()
+
+    def dwellTime(newScale):
+#        global scan
+        scan.dwell = 0.05 * float(newScale)
+        dwell_value['text'] = f'{scan.dwell:.2f}'
+
+    def incrUp():
+        global scan
+
+        m = -2
+        xm = abs(scan.incr)
+        while xm >= 0.1:
+            m = m + 1
+            xm = xm / 10
+
+        if xm < .02:
+            n = 2
+        elif xm < .05:
+            n = 5
         else:
-            set_time_limits(scan.incr)
-            i = i + 1
-            if pltFlag : plt.pause(0.0001)     # pltFlag == False, if run in a thread
-#
-#        print('round: ', i, '   x start= ', x_start, ', x_stop= ', x_stop)
-#        sys.stdout.flush()
-        # time.sleep(scan.dwell)
-    print ('Time scanning finished...')
-    sys.stdout.flush()
-#
+            n = 1
+            m = m + 1
+
+        xm = n * 10**m
+
+        if scan.incr > 0:
+            scan.incr = xm
+        elif scan.incr < 0:
+            scan.incr = -xm
+
+        incr_value['text'] = str(scan.incr)
+#    print("New scan incr: ", scan.incr)
+
+    def incrDown():
+        global scan
+
+        m = -1
+        xm = abs(scan.incr)
+        while xm > 0.1:
+            m = m + 1
+            xm = xm / 10
+
+#        print("m = ", m, ": xm = ", xm)
+        if xm <= 0.02:
+            n = 1
+        elif xm <= 0.05:
+            n = 2
+        else:
+            n = 5
+
+        xm = n * 10**(m - 1)
+
+        if scan.incr > 0:
+            scan.incr = xm
+        elif scan.incr < 0:
+            scan.incr = -xm
+
+        incr_value['text'] = str(scan.incr)
+#        print("New scan.incr: ", scan.incr)
+
+    def switchDir():
+        global scan
+        scan.incr = -scan.incr
+        if scan.incr > 0:
+            switch_dir['text'] = "BACKWARD"
+#        print('Moving forward')
+        else:
+            switch_dir['text'] = "FORWARD"
+#            print('Moving backward')
+
+        incr_value['text'] = str(scan.incr)
+
+    def runMode():
+        global scan, root_after_id
+        
+        if scan.run == 1:
+            scan.run = 2
+            run_mode['text'] = 'RUN'
+#            print('Paused')
+        else:
+            scan.run = 1
+            run_mode['text'] = 'PAUSE'
+            end_run.config(fg='black')
+            root_after_id = root.after(int(scan.dwell * 1000), next_frame)
+#            print('Running')
+
+    def quitScan():
+        global scan, root_after_id
+        end_run.config(fg='red')
+        root.after_cancel(root_after_id)
+        root.quit()
+        root.destroy()
+
+    if scan.run == 1:
+        button_txt = "PAUSE"
+    else:
+#        scan.run = 2
+        button_txt = "RUN"
+
+    run_mode = Button(root, text=button_txt, justify="center", command=runMode)
+    run_mode.place(x=20, y=10)
+
+    if scan.incr > 0:
+        button_txt = "BACKWARD"
+    else:
+        button_txt = "FORWARD"
+
+    switch_dir = Button(root, text=button_txt, justify="center", command=switchDir)
+    switch_dir.place(x=100, y=10)
+
+    dwell_label = Label(root, text="DWELL TIME", justify="center")
+    dwell_label.place(x=25, y=50)
+    dwell_value = Label(root, text=f'{scan.dwell:.2f}', justify="center")
+    dwell_value.place(x=120, y=50)
+    dwell_scale.set(int(scan.dwell * 20.0))
+    dwell_time = Scale(root, from_=1, to=500, orient=HORIZONTAL, length=250, showvalue=0, \
+                   variable=dwell_scale, command=dwellTime)
+    dwell_time.place(x=25, y=70)
+
+    incr_label = Label(root, text="SCAN STEP SIZE", justify="center")
+    incr_label.place(x=100, y=100)
+
+    incr_down = Button(root, text="DOWN", justify="center", command=incrDown)
+    incr_down.place(x=20, y=115)
+
+    button_txt = str(scan.incr)
+    incr_value = Label(root, text=button_txt, justify="center")
+    incr_value.place(x=120, y=120)
+
+    incr_up = Button(root, text="UP", justify="center", command=incrUp)
+    incr_up.place(x=220, y=115)
+
+    if scan.run == 0:
+        button_txt = 'red'
+    else:
+        button_txt = 'black'
+    end_run = Button(root, text="STOP", justify="center", fg = button_txt, command=quitScan)
+    end_run.place(x=220, y=10)
+
+    root_after_id = root.after(int(scan.dwell * 1000), next_frame)
+    root.mainloop()
+
+fetch_data()
+plot_data()
 print('End of gwplot')
