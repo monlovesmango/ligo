@@ -13,7 +13,7 @@ pip install -r ./requirements.txt
 
 # load gwplot.py
 ``` 
-python -i gwplot.py```
+python -i gwplot.py
 
 ```
 
